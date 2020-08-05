@@ -1,11 +1,15 @@
 package history_data
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type MigrationRecordData struct {
-	ID            string    `bson:"_id"`
-	MigrationName string    `bson:"migrationName"`
-	CreatedAt     time.Time `bson:"createdAt"`
+	ID            primitive.ObjectID `bson:"_id,omitempty"`
+	MigrationName string             `bson:"migrationName"`
+	CreatedAt     time.Time          `bson:"createdAt"`
 }
 
 func (mrd *MigrationRecordData) GetID() interface{} {

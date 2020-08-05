@@ -15,9 +15,7 @@ type MigrationRecord struct {
 	CollectionName string
 }
 
-func (mh *MigrationRecord) InitializeHistory(ctx context.Context, historyCollectionName string) error {
-	mh.CollectionName = historyCollectionName
-
+func (mh *MigrationRecord) InitializeHistory(ctx context.Context) error {
 	err := mh.DB.CreateCollection(ctx, mh.CollectionName)
 
 	return err
@@ -32,7 +30,7 @@ func (mh *MigrationRecord) DropHistory(ctx context.Context) error {
 func (mh *MigrationRecord) SaveHistory(ctx context.Context, migrationData history_data.MigrationHistoryData) error {
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 
-	_, err := migrHistoryCollection.InsertOne(ctx, migrationData)
+	_, err := migrHistoryCollection.InsertOne(ctx, migrationData, options.InsertOne())
 
 	return err
 }
@@ -47,8 +45,8 @@ func (mh *MigrationRecord) DeleteHistory(ctx context.Context, migrationData hist
 	return err
 }
 
-func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string) (*history_data.MigrationHistoryData, error) {
-	var migrationHistory history_data.MigrationHistoryData
+func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string) (history_data.MigrationHistoryData, error) {
+	var migrationHistory history_data.MigrationRecordData
 
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 
@@ -67,8 +65,8 @@ func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string)
 	return &migrationHistory, nil
 }
 
-func (mh *MigrationRecord) GetAllHistories(ctx context.Context) (*[]history_data.MigrationHistoryData, error) {
-	var migrationHistories []history_data.MigrationHistoryData
+func (mh *MigrationRecord) GetAllHistories(ctx context.Context) (*[]history_data.MigrationRecordData, error) {
+	var migrationHistories []history_data.MigrationRecordData
 
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 
@@ -77,7 +75,7 @@ func (mh *MigrationRecord) GetAllHistories(ctx context.Context) (*[]history_data
 		return nil, err
 	}
 
-	err := cur.Decode(&migrationHistories)
+	err = cur.Decode(&migrationHistories)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +83,8 @@ func (mh *MigrationRecord) GetAllHistories(ctx context.Context) (*[]history_data
 	return &migrationHistories, nil
 }
 
-func (mh *MigrationRecord) GetLatestHistory(ctx context.Context) (*history_data.MigrationHistoryData, error) {
-	var latestMigrHistory history_data.MigrationHistoryData
+func (mh *MigrationRecord) GetLatestHistory(ctx context.Context) (history_data.MigrationHistoryData, error) {
+	var latestMigrHistory history_data.MigrationRecordData
 
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 

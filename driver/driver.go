@@ -70,3 +70,11 @@ func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.Data
 
 	return nil
 }
+
+func (md *MongoDriver) ConnectClient(ctx context.Context) error {
+	return md.Client.Connect(ctx)
+}
+
+func (md *MongoDriver) DisconnectClient(ctx context.Context) error {
+	return md.Client.Disconnect(ctx)
+}

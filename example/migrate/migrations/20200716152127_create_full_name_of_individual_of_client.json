@@ -1,0 +1,30 @@
+{
+    "up": {
+        "update": "Customer",
+        "updates": [
+            {
+                "q": {},
+                "u": [
+                    {
+                        "$set": { "individual.full_name": { "$concat": ["$individual.first_name", " ", "$individual.last_name"] } }
+                    }
+                ],
+                "multi": true
+            }
+        ]
+    },
+    "down": {
+        "update": "Customer",
+        "updates": [
+            {
+                "q": {},
+                "u": [
+                    {
+                        "$unset": { "individual.full_name": "" }
+                    }
+                ],
+                "multi": true
+            }
+        ]
+    }
+}

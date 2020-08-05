@@ -30,28 +30,23 @@ type JSONCommand struct {
 	DownCommand bson.M `bson:"down"`
 }
 
-func (mm *MongoMigration) StartMigration(source string, client *mongo.Client, cfg config.DatabaseConfig, migrationHistoryCollectionName string) error {
+func (mm *MongoMigration) StartMigration(source string, client *mongo.Client, cfg config.DatabaseConfig, historyCollection history.MigrationHistory) error {
 	var mongoDriver driver.Driver
 
 	mongoDriver.SetClient(cfg)
 
-	mm.StartMigrationWithDriver(source, mongoDriver, migrationHistoryCollectionName)
+	mm.StartMigrationWithDriver(source, mongoDriver, historyCollection)
 
 	return nil
 }
 
-func (mm *MongoMigration) StartMigrationWithDriver(source string, driver driver.Driver, migrationHistoryCollectionName string) error {
+func (mm *MongoMigration) StartMigrationWithDriver(source string, driver driver.Driver, historyCollection history.MigrationHistory) error {
 	mm.Driver = driver
 	mm.Source = source
 
-	historyColl := history.MigrationRecord{
-		DB:             mm.Driver.GetDB(),
-		CollectionName: migrationHistoryCollectionName,
-	}
-
 	ctx := context.TODO()
 
-	err := historyColl.InitializeHistory(ctx, migrationHistoryCollectionName)
+	err := historyCollection.InitializeHistory(ctx)
 	if err != nil {
 		cmdErr := err.(mongo.CommandError)
 		if cmdErr.Code != 48 {
@@ -59,13 +54,14 @@ func (mm *MongoMigration) StartMigrationWithDriver(source string, driver driver.
 		}
 	}
 
-	mm.HistoryCollection = &historyColl
+	mm.HistoryCollection = historyCollection
 
 	return nil
 }
 
 func (mm *MongoMigration) Run(direction int, steps int) error {
 	step := 0
+	fileExt := ".json"
 
 	dir := http.Dir(mm.Source)
 	file, err := dir.Open("/")
@@ -81,9 +77,10 @@ func (mm *MongoMigration) Run(direction int, steps int) error {
 	ctx := context.TODO()
 
 	for _, info := range files {
-		if strings.HasSuffix(info.Name(), ".json") {
-			hd, err := mm.HistoryCollection.GetHistory(ctx, info.Name())
-			if !errors.Is(err, mongo.ErrNoDocuments) {
+		if strings.HasSuffix(info.Name(), fileExt) {
+			migrName := strings.TrimRight(info.Name(), fileExt)
+			hd, err := mm.HistoryCollection.GetHistory(ctx, migrName)
+			if !errors.Is(err, mongo.ErrNoDocuments) && err != nil {
 				return err
 			}
 
@@ -134,7 +131,10 @@ func (mm *MongoMigration) RunSpecificFile(migrationFileName string, direction in
 		usedCommand = command.DownCommand
 	}
 
-	res, err := directionFunc(ctx, usedCommand, migrationFileName)
+	fileExt := ".json"
+	migrName := strings.TrimRight(migrationFileName, fileExt)
+
+	res, err := directionFunc(ctx, usedCommand, migrName)
 	if err != nil {
 		return nil, err
 	}
@@ -142,9 +142,9 @@ func (mm *MongoMigration) RunSpecificFile(migrationFileName string, direction in
 	return res, nil
 }
 
-func (mm *MongoMigration) executeUp(ctx context.Context, upCmd bson.M, migrFileName string) (interface{}, error) {
+func (mm *MongoMigration) executeUp(ctx context.Context, upCmd bson.M, migrName string) (interface{}, error) {
 	migrRecord := history_data.MigrationRecordData{
-		MigrationName: migrFileName,
+		MigrationName: migrName,
 		CreatedAt:     time.Now(),
 	}
 
@@ -159,9 +159,9 @@ func (mm *MongoMigration) executeUp(ctx context.Context, upCmd bson.M, migrFileN
 	return res, nil
 }
 
-func (mm *MongoMigration) executeDown(ctx context.Context, downCmd bson.M, migrFileName string) (interface{}, error) {
+func (mm *MongoMigration) executeDown(ctx context.Context, downCmd bson.M, migrName string) (interface{}, error) {
 	migrRecord := history_data.MigrationRecordData{
-		MigrationName: migrFileName,
+		MigrationName: migrName,
 		CreatedAt:     time.Now(),
 	}
 
