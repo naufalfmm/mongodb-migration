@@ -2,64 +2,91 @@ package history
 
 import (
 	"context"
-	"time"
 
+	"github.com/naufalfmm/mongodb-migration/history_data"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type MigrationHistory struct {
+type MigrationRecord struct {
 	DB *mongo.Database
 
 	CollectionName string
 }
 
-type MigrationHistoryModel struct {
-	MigrationName string    `bson:"migrationName"`
-	CreatedAt     time.Time `bson:"createdAt"`
-}
+func (mh *MigrationRecord) InitializeHistory(ctx context.Context, historyCollectionName string) error {
+	mh.CollectionName = historyCollectionName
 
-func (mh *MigrationHistory) InitializeHistoryCollection(ctx context.Context) error {
 	err := mh.DB.CreateCollection(ctx, mh.CollectionName)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
-func (mh *MigrationHistory) SaveHistory(ctx context.Context, migrName string) error {
-	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
+func (mh *MigrationRecord) DropHistory(ctx context.Context) error {
+	err := mh.DB.Collection(mh.CollectionName).Drop(ctx)
 
-	migHist := MigrationHistoryModel{
-		MigrationName: migrName,
-		CreatedAt:     time.Now(),
-	}
-
-	_, err := migrHistoryCollection.InsertOne(ctx, migHist)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (mh *MigrationHistory) DeleteHistory(ctx context.Context, migrName string) error {
+func (mh *MigrationRecord) SaveHistory(ctx context.Context, migrationData history_data.MigrationHistoryData) error {
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 
-	filter := bson.M{"migrationName": migrName}
+	_, err := migrHistoryCollection.InsertOne(ctx, migrationData)
+
+	return err
+}
+
+func (mh *MigrationRecord) DeleteHistory(ctx context.Context, migrationData history_data.MigrationHistoryData) error {
+	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
+
+	filter := bson.M{"migrationName": migrationData.GetMigrationName()}
 
 	_, err := migrHistoryCollection.DeleteOne(ctx, filter)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
-func (mh *MigrationHistory) GetLatestMigration(ctx context.Context) (*MigrationHistory, error) {
-	var latestMigrHistory MigrationHistory
+func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string) (*history_data.MigrationHistoryData, error) {
+	var migrationHistory history_data.MigrationHistoryData
+
+	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
+
+	filter := bson.M{"migrationName": migrationName}
+
+	cur := migrHistoryCollection.FindOne(ctx, filter)
+	if cur.Err() != nil {
+		return nil, cur.Err()
+	}
+
+	err := cur.Decode(&migrationHistory)
+	if err != nil {
+		return nil, err
+	}
+
+	return &migrationHistory, nil
+}
+
+func (mh *MigrationRecord) GetAllHistories(ctx context.Context) (*[]history_data.MigrationHistoryData, error) {
+	var migrationHistories []history_data.MigrationHistoryData
+
+	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
+
+	cur, err := migrHistoryCollection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	err := cur.Decode(&migrationHistories)
+	if err != nil {
+		return nil, err
+	}
+
+	return &migrationHistories, nil
+}
+
+func (mh *MigrationRecord) GetLatestHistory(ctx context.Context) (*history_data.MigrationHistoryData, error) {
+	var latestMigrHistory history_data.MigrationHistoryData
 
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 

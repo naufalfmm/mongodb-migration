@@ -15,11 +15,15 @@ type MongoDriver struct {
 	Client *mongo.Client
 	DB     *mongo.Database
 
-	Config *config.MongoConfig
+	Config *config.DatabaseConfig
 }
 
-func (md *MongoDriver) SetClient(cfg config.MongoConfig) error {
-	ctx := context.Background()
+func (md *MongoDriver) GetDB() *mongo.Database {
+	return md.DB
+}
+
+func (md *MongoDriver) SetClient(cfg config.DatabaseConfig) error {
+	ctx := context.TODO()
 
 	err := md.SetClientWithContext(ctx, cfg)
 	if err != nil {
@@ -29,22 +33,22 @@ func (md *MongoDriver) SetClient(cfg config.MongoConfig) error {
 	return nil
 }
 
-func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.MongoConfig) error {
+func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.DatabaseConfig) error {
 	var cancel context.CancelFunc
 
-	if cfg.DBURI == nil {
-		cfg.SetURL()
+	if cfg.DBURI() == nil {
+		cfg.SetURI()
 	}
 
-	client, err := mongo.NewClient(options.Client().ApplyURI(*cfg.DBURI))
+	client, err := mongo.NewClient(options.Client().ApplyURI(*cfg.DBURI()))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	md.Client = client
 
-	if cfg.DBTimeout != nil {
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(*cfg.DBTimeout)*time.Second)
+	if cfg.DBTimeout() != nil {
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(*cfg.DBTimeout())*time.Second)
 		defer cancel()
 	}
 
@@ -58,7 +62,7 @@ func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.Mong
 		return err
 	}
 
-	db := client.Database(cfg.DBName)
+	db := client.Database(cfg.DBName())
 
 	md.DB = db
 

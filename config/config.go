@@ -4,21 +4,49 @@ import (
 	"fmt"
 )
 
-type MongoConfig struct {
-	DBName     string
-	DBUser     string
-	DBPassword string
-	DBHost     string
-	DBPort     string
-	DBURI      *string
+type Config struct {
+	Name     string
+	User     string
+	Password string
+	Host     string
+	Port     string
+	URI      *string
 
-	DBTimeout *int
+	Timeout *int64
 }
 
-func (mc *MongoConfig) SetURL() error {
-	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", mc.DBUser, mc.DBPassword, mc.DBHost, mc.DBPort, mc.DBName)
+func (cfg *Config) SetURI() error {
+	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name)
 
-	mc.DBURI = &uri
+	cfg.URI = &uri
 
 	return nil
+}
+
+func (cfg *Config) DBName() string {
+	return cfg.Name
+}
+
+func (cfg *Config) DBUser() string {
+	return cfg.User
+}
+
+func (cfg *Config) DBPassword() string {
+	return cfg.Password
+}
+
+func (cfg *Config) DBHost() string {
+	return cfg.Host
+}
+
+func (cfg *Config) DBPort() string {
+	return cfg.Port
+}
+
+func (cfg *Config) DBURI() *string {
+	return cfg.URI
+}
+
+func (cfg *Config) DBTimeout() *int64 {
+	return cfg.Timeout
 }
