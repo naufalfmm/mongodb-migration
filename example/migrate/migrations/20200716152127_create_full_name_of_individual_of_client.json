@@ -20,7 +20,7 @@
                 "q": {},
                 "u": [
                     {
-                        "$unset": { "individual.full_name": "" }
+                        "$unset": "individual.full_name"
                     }
                 ],
                 "multi": true

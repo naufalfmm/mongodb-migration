@@ -2,6 +2,7 @@ package history
 
 import (
 	"context"
+	"errors"
 
 	"github.com/naufalfmm/mongodb-migration/history_data"
 	"go.mongodb.org/mongo-driver/bson"
@@ -27,7 +28,7 @@ func (mh *MigrationRecord) DropHistory(ctx context.Context) error {
 	return err
 }
 
-func (mh *MigrationRecord) SaveHistory(ctx context.Context, migrationData history_data.MigrationHistoryData) error {
+func (mh *MigrationRecord) SaveHistory(ctx context.Context, migrationData interface{}) error {
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 
 	_, err := migrHistoryCollection.InsertOne(ctx, migrationData, options.InsertOne())
@@ -35,17 +36,17 @@ func (mh *MigrationRecord) SaveHistory(ctx context.Context, migrationData histor
 	return err
 }
 
-func (mh *MigrationRecord) DeleteHistory(ctx context.Context, migrationData history_data.MigrationHistoryData) error {
+func (mh *MigrationRecord) DeleteHistory(ctx context.Context, migrationData interface{}) error {
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
 
-	filter := bson.M{"migrationName": migrationData.GetMigrationName()}
+	filter := bson.M{"migrationName": migrationData.(*history_data.MigrationRecordData).MigrationName}
 
 	_, err := migrHistoryCollection.DeleteOne(ctx, filter)
 
 	return err
 }
 
-func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string) (history_data.MigrationHistoryData, error) {
+func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string) (interface{}, error) {
 	var migrationHistory history_data.MigrationRecordData
 
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)
@@ -54,6 +55,10 @@ func (mh *MigrationRecord) GetHistory(ctx context.Context, migrationName string)
 
 	cur := migrHistoryCollection.FindOne(ctx, filter)
 	if cur.Err() != nil {
+		if errors.Is(cur.Err(), mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+
 		return nil, cur.Err()
 	}
 
@@ -83,7 +88,7 @@ func (mh *MigrationRecord) GetAllHistories(ctx context.Context) (*[]history_data
 	return &migrationHistories, nil
 }
 
-func (mh *MigrationRecord) GetLatestHistory(ctx context.Context) (history_data.MigrationHistoryData, error) {
+func (mh *MigrationRecord) GetLatestHistory(ctx context.Context) (interface{}, error) {
 	var latestMigrHistory history_data.MigrationRecordData
 
 	migrHistoryCollection := mh.DB.Collection(mh.CollectionName)

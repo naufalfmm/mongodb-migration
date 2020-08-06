@@ -2,7 +2,6 @@ package migration
 
 import (
 	"context"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -59,28 +58,15 @@ func (mm *MongoMigration) StartMigrationWithDriver(source string, driver driver.
 	return nil
 }
 
-func (mm *MongoMigration) Run(direction int, steps int) error {
+func (mm *MongoMigration) runUp(ctx context.Context, files []os.FileInfo, steps int) error {
 	step := 0
 	fileExt := ".json"
-
-	dir := http.Dir(mm.Source)
-	file, err := dir.Open("/")
-	if err != nil {
-		panic(err)
-	}
-
-	files, err := file.Readdir(0)
-	if err != nil {
-		panic(err)
-	}
-
-	ctx := context.TODO()
 
 	for _, info := range files {
 		if strings.HasSuffix(info.Name(), fileExt) {
 			migrName := strings.TrimRight(info.Name(), fileExt)
 			hd, err := mm.HistoryCollection.GetHistory(ctx, migrName)
-			if !errors.Is(err, mongo.ErrNoDocuments) && err != nil {
+			if err != nil {
 				return err
 			}
 
@@ -88,7 +74,7 @@ func (mm *MongoMigration) Run(direction int, steps int) error {
 				continue
 			}
 
-			_, err = mm.RunSpecificFile(info.Name(), direction)
+			_, err = mm.runSpecificFile(ctx, migrName, constants.UP)
 			if err != nil {
 				return err
 			}
@@ -103,10 +89,65 @@ func (mm *MongoMigration) Run(direction int, steps int) error {
 	return nil
 }
 
-func (mm *MongoMigration) RunSpecificFile(migrationFileName string, direction int) (interface{}, error) {
+func (mm *MongoMigration) runDown(ctx context.Context, files []os.FileInfo, steps int) error {
+	step := 0
+	fileExt := ".json"
+
+	for _, info := range files {
+		if strings.HasSuffix(info.Name(), fileExt) {
+			migrName := strings.TrimRight(info.Name(), fileExt)
+			hd, err := mm.HistoryCollection.GetHistory(ctx, migrName)
+			if err != nil {
+				return err
+			}
+
+			if hd == nil {
+				continue
+			}
+
+			_, err = mm.runSpecificFile(ctx, migrName, constants.DOWN)
+			if err != nil {
+				return err
+			}
+			step++
+		}
+
+		if step == steps {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (mm *MongoMigration) Run(ctx context.Context, direction int, steps int) error {
+	var err error = nil
+
+	dir := http.Dir(mm.Source)
+	file, err := dir.Open("/")
+	if err != nil {
+		panic(err)
+	}
+
+	files, err := file.Readdir(0)
+	if err != nil {
+		panic(err)
+	}
+
+	directionRun := mm.runUp
+	if direction == constants.DOWN {
+		directionRun = mm.runDown
+	}
+
+	err = directionRun(ctx, files, steps)
+
+	return err
+}
+
+func (mm *MongoMigration) runSpecificFile(ctx context.Context, migrationName string, direction int) (interface{}, error) {
 	var command JSONCommand
 
-	migrationFile, err := os.Open(mm.Source + migrationFileName)
+	migrationFile, err := os.Open(mm.Source + migrationName + ".json")
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +163,6 @@ func (mm *MongoMigration) RunSpecificFile(migrationFileName string, direction in
 		return nil, err
 	}
 
-	ctx := context.TODO()
-
 	directionFunc := mm.executeUp
 	usedCommand := command.UpCommand
 	if direction == constants.DOWN {
@@ -131,15 +170,21 @@ func (mm *MongoMigration) RunSpecificFile(migrationFileName string, direction in
 		usedCommand = command.DownCommand
 	}
 
-	fileExt := ".json"
-	migrName := strings.TrimRight(migrationFileName, fileExt)
-
-	res, err := directionFunc(ctx, usedCommand, migrName)
+	res, err := directionFunc(ctx, usedCommand, migrationName)
 	if err != nil {
 		return nil, err
 	}
 
 	return res, nil
+}
+
+func (mm *MongoMigration) RunSpecificFile(ctx context.Context, migrationFileName string, direction int) (interface{}, error) {
+	fileExt := ".json"
+	migrName := strings.TrimRight(migrationFileName, fileExt)
+
+	res, err := mm.runSpecificFile(ctx, migrName, direction)
+
+	return res, err
 }
 
 func (mm *MongoMigration) executeUp(ctx context.Context, upCmd bson.M, migrName string) (interface{}, error) {

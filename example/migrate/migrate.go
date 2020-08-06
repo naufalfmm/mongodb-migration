@@ -45,7 +45,7 @@ func main() {
 		panic(err)
 	}
 
-	err = migr.Run(constants.UP, 2)
+	err = migr.Run(ctx, constants.DOWN, 2)
 	if err != nil {
 		panic(err)
 	}
