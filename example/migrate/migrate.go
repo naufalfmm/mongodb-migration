@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 
-	"github.com/naufalfmm/mongodb-migration/config"
 	"github.com/naufalfmm/mongodb-migration/constants"
+
+	"github.com/naufalfmm/mongodb-migration/config"
+	"github.com/naufalfmm/mongodb-migration/constants/direction"
+	"github.com/naufalfmm/mongodb-migration/constants/steps"
 	"github.com/naufalfmm/mongodb-migration/driver"
 	"github.com/naufalfmm/mongodb-migration/history"
 	"github.com/naufalfmm/mongodb-migration/migration"
@@ -37,15 +40,15 @@ func main() {
 
 	hs := history.MigrationRecord{
 		DB:             dr.GetDB(),
-		CollectionName: "migrationHistory",
+		CollectionName: constants.DEFAULT_MIGRATION_HISTORY_COLLECTION,
 	}
 
-	err := migr.StartMigrationWithDriver("./example/migrate/migrations/", &dr, &hs)
+	err := migr.StartMigrationWithDriver(ctx, "./example/migrate/migrations/", &dr, &hs)
 	if err != nil {
 		panic(err)
 	}
 
-	err = migr.Run(ctx, constants.DOWN, 2)
+	err = migr.Run(ctx, direction.UP, steps.ALL)
 	if err != nil {
 		panic(err)
 	}

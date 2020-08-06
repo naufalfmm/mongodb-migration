@@ -3,7 +3,7 @@
         "update": "Customer",
         "updates": [
             {
-                "q": {},
+                "q": {"officer": {"$ne": null}},
                 "u": [
                     {
                         "$set": { "officer.full_name": { "$concat": ["$officer.first_name", " ", "$officer.last_name"] } }

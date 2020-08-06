@@ -1,4 +1,4 @@
-package constants
+package error
 
 const (
 	DB_NAME_MISSING     = "Database Name Missing"

@@ -11,6 +11,6 @@ type Driver interface {
 	GetDB() *mongo.Database
 	SetClient(cfg config.DatabaseConfig) error
 	SetClientWithContext(ctx context.Context, cfg config.DatabaseConfig) error
-	ConnectClient(ctx context.Context) error
-	DisconnectClient(ctx context.Context) error
+	Connect(ctx context.Context) error
+	Disconnect(ctx context.Context) error
 }

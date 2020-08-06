@@ -3,7 +3,7 @@
         "update": "Customer",
         "updates": [
             {
-                "q": {},
+                "q": {"individual": {"$ne": null}},
                 "u": [
                     {
                         "$set": { "individual.full_name": { "$concat": ["$individual.first_name", " ", "$individual.last_name"] } }
