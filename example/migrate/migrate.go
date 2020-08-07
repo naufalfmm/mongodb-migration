@@ -29,21 +29,21 @@ func main() {
 			Port:     DBPort,
 		}
 
-		migr = migration.MongoMigration{}
-		dr   = driver.MongoDriver{}
+		migr        = migration.MongoMigration{}
+		mongoDriver = driver.MongoDriver{}
 	)
 
 	ctx := context.TODO()
 
 	cfg.SetURI()
-	dr.SetClientWithContext(ctx, &cfg)
+	mongoDriver.SetClientWithContext(ctx, &cfg)
 
-	hs := history.MigrationRecord{
-		DB:             dr.GetDB(),
+	historyRecord := history.MigrationRecord{
+		DB:             mongoDriver.GetDB(),
 		CollectionName: constants.DEFAULT_MIGRATION_HISTORY_COLLECTION,
 	}
 
-	err := migr.StartMigrationWithDriver(ctx, "./example/migrate/migrations/", &dr, &hs)
+	err := migr.StartMigrationWithDriver(ctx, "./example/migrate/migrations/", &mongoDriver, &historyRecord)
 	if err != nil {
 		panic(err)
 	}

@@ -29,7 +29,6 @@
 - Create history collection as migration files tracker
 - Implement interface as template of the library
 - Atomic migrations
-- Automatically migrate down if migrate up fails
 - Use json migration file as `*.sql` for sql migration file
 - Implement `db.RunCommand()`. You can check [here](https://docs.mongodb.com/manual/reference/method/db.runCommand/)
 
@@ -138,7 +137,7 @@ The content of migration file is the command - formed as document or string - of
 
 Example of the [content](/example/migrate/migrations/20200716152127_create_full_name_of_individual_of_client.json)
 
-```
+```json
 {
     "up": {
         "update": "Customer",
