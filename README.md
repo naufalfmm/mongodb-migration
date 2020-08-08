@@ -179,7 +179,7 @@ Example of the [content](/example/migrate/migrations/20200716152127_create_full_
 
 - [@naufalfmm](https://github.com/naufalfmm) - Idea & Initial work
 
-If you interest to join as contributor, please contact me on [email](muhammadnaufalfm@gmail.com) or just create PR :)
+If you interest to join as contributor, please contact me on [email](mailto:muhammadnaufalfm@gmail.com) or just create PR :)
 
 ## 🎉 Acknowledgements <a name = "acknowledgement"></a>
 
