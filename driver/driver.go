@@ -15,7 +15,7 @@ type MongoDriver struct {
 	Client *mongo.Client
 	DB     *mongo.Database
 
-	Config *config.DatabaseConfig
+	Config config.DatabaseConfig
 }
 
 func (md *MongoDriver) GetDB() *mongo.Database {
@@ -66,7 +66,7 @@ func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.Data
 
 	md.DB = db
 
-	md.Config = &cfg
+	md.Config = cfg
 
 	return nil
 }
