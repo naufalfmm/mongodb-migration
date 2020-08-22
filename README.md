@@ -58,6 +58,7 @@ package main
 import (
 	"context"
 
+	"github.com/naufalfmm/mongodb-migration/client"
 	"github.com/naufalfmm/mongodb-migration/constants"
 
 	"github.com/naufalfmm/mongodb-migration/config"
@@ -76,7 +77,7 @@ func main() {
 		DBHost     = "localhost"
 		DBPort     = "27017"
 
-		cfg config.Config = config.Config{
+		cfg = config.Config{
 			Name:     DBName,
 			User:     DBUser,
 			Password: DBPassword,
@@ -84,13 +85,17 @@ func main() {
 			Port:     DBPort,
 		}
 
-		migr = migration.MongoMigration{}
-		mongoDriver   = driver.MongoDriver{}
+		client = client.MongoClient{}
+
+		migr        = migration.MongoMigration{}
+		mongoDriver = driver.MongoDriver{}
 	)
 
 	ctx := context.TODO()
 
 	cfg.SetURI()
+
+	mongoDriver.Client = &client
 	mongoDriver.SetClientWithContext(ctx, &cfg)
 
 	historyRecord := history.MigrationRecord{
@@ -133,42 +138,51 @@ For example
 
 #### Content
 
-The content of migration file is the command - formed as document or string - of the `db.runCommand()`. Please refer the list of commands [here](https://docs.mongodb.com/manual/reference/command/). 
+The content of migration file is the command - formed as document or string - of the `db.runCommand()`. Please refer the list of commands [here](https://docs.mongodb.com/manual/reference/command/).
 
 Example of the [content](/example/migrate/migrations/20200716152127_create_full_name_of_individual_of_client.json)
 
 ```json
 {
-    "up": {
-        "update": "Customer",
-        "updates": [
-            {
-                "q": {"individual": {"$ne": null}},
-                "u": [
-                    {
-                        "$set": { "individual.full_name": { "$concat": ["$individual.first_name", " ", "$individual.last_name"] } }
-                    }
-                ],
-                "multi": true
+  "up": {
+    "update": "Customer",
+    "updates": [
+      {
+        "q": { "individual": { "$ne": null } },
+        "u": [
+          {
+            "$set": {
+              "individual.full_name": {
+                "$concat": [
+                  "$individual.first_name",
+                  " ",
+                  "$individual.last_name"
+                ]
+              }
             }
-        ]
-    },
-    "down": {
-        "update": "Customer",
-        "updates": [
-            {
-                "q": {},
-                "u": [
-                    {
-                        "$unset": "individual.full_name"
-                    }
-                ],
-                "multi": true
-            }
-        ]
-    }
+          }
+        ],
+        "multi": true
+      }
+    ]
+  },
+  "down": {
+    "update": "Customer",
+    "updates": [
+      {
+        "q": {},
+        "u": [
+          {
+            "$unset": "individual.full_name"
+          }
+        ],
+        "multi": true
+      }
+    ]
+  }
 }
 ```
+
 `up` is for migrate up and `down` is for migrate down.
 
 ## ⛏️ Built Using <a name = "built_using"></a>

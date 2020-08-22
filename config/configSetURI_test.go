@@ -46,7 +46,7 @@ func ItShouldReplaceValueOfDBURI(t *testing.T) {
 	}
 }
 
-func TestSetURL(t *testing.T) {
+func TestSetURI(t *testing.T) {
 	t.Run("It should set value of DBURI", ItShouldSetValueOfDBURI)
 	t.Run("It should replace value of DBURI", ItShouldReplaceValueOfDBURI)
 }

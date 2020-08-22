@@ -13,13 +13,13 @@ import (
 
 type MongoDriver struct {
 	Client client.Client
-	DB     *mongo.Database
+	db     *mongo.Database
 
 	Config config.DatabaseConfig
 }
 
 func (md *MongoDriver) GetDB() *mongo.Database {
-	return md.DB
+	return md.db
 }
 
 func (md *MongoDriver) SetClient(cfg config.DatabaseConfig) error {
@@ -35,15 +35,12 @@ func (md *MongoDriver) SetClient(cfg config.DatabaseConfig) error {
 
 func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.DatabaseConfig) error {
 	var (
-		client client.MongoClient
 		cancel context.CancelFunc
 	)
 
 	if cfg.DBURI() == nil {
 		cfg.SetURI()
 	}
-
-	md.Client = &client
 
 	md.Client.ApplyURI(*cfg.DBURI())
 
@@ -69,7 +66,7 @@ func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.Data
 
 	db := md.Client.Database(cfg.DBName())
 
-	md.DB = db
+	md.db = db
 
 	md.Config = cfg
 

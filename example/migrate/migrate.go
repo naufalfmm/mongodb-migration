@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/naufalfmm/mongodb-migration/client"
 	"github.com/naufalfmm/mongodb-migration/constants"
 
 	"github.com/naufalfmm/mongodb-migration/config"
@@ -21,13 +22,15 @@ func main() {
 		DBHost     = "localhost"
 		DBPort     = "27017"
 
-		cfg config.Config = config.Config{
+		cfg = config.Config{
 			Name:     DBName,
 			User:     DBUser,
 			Password: DBPassword,
 			Host:     DBHost,
 			Port:     DBPort,
 		}
+
+		client = client.MongoClient{}
 
 		migr        = migration.MongoMigration{}
 		mongoDriver = driver.MongoDriver{}
@@ -36,6 +39,8 @@ func main() {
 	ctx := context.TODO()
 
 	cfg.SetURI()
+
+	mongoDriver.Client = &client
 	mongoDriver.SetClientWithContext(ctx, &cfg)
 
 	historyRecord := history.MigrationRecord{
