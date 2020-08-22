@@ -2,7 +2,6 @@ package driver
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/naufalfmm/mongodb-migration/client"
@@ -46,7 +45,7 @@ func (md *MongoDriver) SetClientWithContext(ctx context.Context, cfg config.Data
 
 	err := md.Client.NewClient()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if cfg.DBTimeout() != nil {
